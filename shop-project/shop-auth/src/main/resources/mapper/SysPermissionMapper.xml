@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.auth.mapper.SysPermissionMapper">
+    <select id="selectByUserId" resultType="com.shop.auth.entity.SysPermission">
+        SELECT DISTINCT p.id, p.parent_id, p.perm_code, p.perm_name, p.type,
+                        p.path, p.component, p.icon, p.sort, p.status
+        FROM sys_permission p
+                 JOIN sys_role_permission rp ON rp.permission_id = p.id AND rp.deleted = 0
+                 JOIN sys_user_role ur ON ur.role_id = rp.role_id AND ur.deleted = 0
+        WHERE ur.user_id = #{userId} AND p.deleted = 0 AND p.status = 1
+        ORDER BY p.sort ASC, p.id ASC
+    </select>
+</mapper>

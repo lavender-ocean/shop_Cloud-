@@ -1,0 +1,29 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: shop-gateway
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      username: nacos
+      password: nacos
+      discovery: { namespace: dev, group: DEFAULT_GROUP }
+      config:    { namespace: dev, group: DEFAULT_GROUP, file-extension: yaml }
+    gateway:
+      routes:
+        - id: shop-auth
+          uri: lb://shop-auth
+          predicates:
+            - Path=/api/auth/**
+        - id: shop-user
+          uri: lb://shop-user
+          predicates:
+            - Path=/api/user/**
+  config:
+    import:
+      - optional:nacos:common-dev.yaml
+      - optional:nacos:shop-gateway-dev.yaml

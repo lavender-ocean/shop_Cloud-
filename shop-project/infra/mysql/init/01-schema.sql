@@ -1,0 +1,12 @@
+-- 业务库（一服务一 schema）
+CREATE DATABASE IF NOT EXISTS shop_auth      DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS shop_user      DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS shop_product   DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS shop_inventory DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS shop_order     DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS shop_payment   DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS shop_promotion DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- xxl-job 库
+CREATE DATABASE IF NOT EXISTS xxl_job        DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- nacos 配置库
+CREATE DATABASE IF NOT EXISTS nacos_config   DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

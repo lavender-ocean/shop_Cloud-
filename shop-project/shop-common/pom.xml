@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.shop</groupId>
+        <artifactId>shop-cloud</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>shop-common</artifactId>
+    <packaging>pom</packaging>
+    <name>shop-common</name>
+
+    <modules>
+        <module>shop-common-core</module>
+        <module>shop-common-web</module>
+        <module>shop-common-mybatis</module>
+        <module>shop-common-redis</module>
+        <module>shop-common-mq</module>
+        <module>shop-common-security</module>
+        <module>shop-common-feign</module>
+    </modules>
+</project>

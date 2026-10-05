@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.auth.mapper.SysUserRoleMapper">
+    <insert id="insertIgnore">
+        INSERT IGNORE INTO sys_user_role (id, user_id, role_id, create_time, deleted)
+        VALUES (#{id}, #{userId}, #{roleId}, NOW(), 0)
+    </insert>
+</mapper>

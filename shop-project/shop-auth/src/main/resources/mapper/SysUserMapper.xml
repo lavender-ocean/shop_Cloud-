@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.auth.mapper.SysUserMapper">
+
+    <select id="selectByUsername" resultType="com.shop.auth.entity.SysUser">
+        SELECT id, username, password, nickname, phone, email,
+               user_type, status, last_login_time,
+               create_time, update_time, create_by, update_by, deleted
+        FROM sys_user
+        WHERE username = #{username} AND deleted = 0
+            LIMIT 1
+    </select>
+
+    <insert id="insert">
+        INSERT INTO sys_user
+        (id, username, password, nickname, phone, email, user_type, status,
+         create_time, update_time, create_by, update_by, deleted)
+        VALUES
+            (#{id}, #{username}, #{password}, #{nickname}, #{phone}, #{email},
+             #{userType}, #{status}, NOW(), NOW(), 0, 0, 0)
+    </insert>
+
+    <update id="updateLastLoginTime">
+        UPDATE sys_user SET last_login_time = NOW(), update_time = NOW() WHERE id = #{id}
+    </update>
+</mapper>

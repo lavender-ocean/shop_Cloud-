@@ -1,0 +1,3 @@
+security.SecurityAutoConfiguration
+security.SecurityAutoConfiguration$PermissionAutoConfiguration
+security.SecurityAutoConfiguration$SecurityWebAutoConfiguration
