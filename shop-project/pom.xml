@@ -16,6 +16,8 @@
         <module>shop-user</module>
         <module>shop-auth</module>
         <module>shop-gateway</module>
+        <module>shop-product</module>
+        <module>shop-inventory</module>
         <!--后续微服务模块，后面再加：shop-gateway、shop-order等 -->
     </modules>
 

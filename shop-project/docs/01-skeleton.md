@@ -8,7 +8,7 @@
 | Spring Boot | 3.2.x | WebFlux 与 MVC 基线 |
 | Spring Cloud | 2023.0.x | 对应 Boot 3.2 |
 | Spring Cloud Alibaba | 2023.0.x | Nacos / Sentinel / Seata |
-| MyBatis-Plus | 3.5.5+ | **Boot3 用 `mybatis-plus-spring-boot3-starter`** |
+| MyBatis + MyBatis-Plus | mybatis-plus-spring-boot3-starter 3.5.5+ | **原生 MyBatis 写 XML SQL**；分页 / 雪花 ID / 自动填充用 MP |
 | Knife4j | 4.x (openapi3) | 接口文档 |
 
 **Boot3 两个坑：**
@@ -27,7 +27,7 @@ shop_Cloud/
 ├── shop-common/               # 公共依赖聚合（packaging=pom）
 │   ├── shop-common-core       # Result / 异常 / 错误码 / 常量 / 枚举 / 工具 / UserContext
 │   ├── shop-common-web        # 全局异常 / traceId / Jackson / Knife4j / 校验
-│   ├── shop-common-mybatis    # MP 配置 / BaseEntity / 自动填充 / 分页 / 乐观锁
+│   ├── shop-common-mybatis    # MP 配置（分页/乐观锁/自动填充）/ BaseEntity
 │   ├── shop-common-redis      # RedisTemplate / Redisson / 缓存 key 规范
 │   ├── shop-common-mq         # MQ 配置 / 消息基类 / 可靠投递 / 消费幂等
 │   ├── shop-common-security   # JwtUtils / 鉴权注解 / 上下文拦截器
@@ -52,7 +52,7 @@ shop_Cloud/
 
 ## A-3 父 pom 职责（只做两件事）
 
-1. `<dependencyManagement>`：import 四个 BOM（`spring-boot-dependencies`、`spring-cloud-dependencies`、`spring-cloud-alibaba-dependencies`、`mybatis-plus-bom`）+ 三方依赖统一版本。
+1. `<dependencyManagement>`：import 三个 BOM（`spring-boot-dependencies`、`spring-cloud-dependencies`、`spring-cloud-alibaba-dependencies`）+ 三方依赖统一版本。
 2. `<pluginManagement>`：`maven-compiler-plugin`（release 17）、`spring-boot-maven-plugin`、`flatten-maven-plugin`。
 
 > 原则：**父 pom 不放 `<dependencies>`**（避免强制传染）。

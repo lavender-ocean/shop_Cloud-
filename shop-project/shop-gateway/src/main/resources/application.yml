@@ -23,6 +23,14 @@ spring:
           uri: lb://shop-user
           predicates:
             - Path=/api/user/**
+        - id: shop-product
+          uri: lb://shop-product
+          predicates:
+            - Path=/api/product/**,/admin/product/**
+        - id: shop-inventory
+          uri: lb://shop-inventory
+          predicates:
+            - Path=/api/inventory/**,/admin/inventory/**
   config:
     import:
       - optional:nacos:common-dev.yaml

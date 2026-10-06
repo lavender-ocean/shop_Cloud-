@@ -8,9 +8,11 @@ import com.baomidou.mybatisplus.extension.plugins.inner.BlockAttackInnerIntercep
 import com.baomidou.mybatisplus.extension.plugins.inner.OptimisticLockerInnerInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.PaginationInnerInterceptor;
 import handler.MyMetaObjectHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import util.IdGenerator;
 
 /**
  * MyBatis-Plus 自动装配：三大拦截器 + 自动填充。
@@ -38,4 +40,13 @@ public class ShopMybatisAutoConfiguration {
     public MetaObjectHandler metaObjectHandler() {
         return new MyMetaObjectHandler();
     }
+
+
+//    @Bean
+//    @ConditionalOnMissingBean
+//    public IdGenerator idGenerator(@Value("${shop.datacenter-id:1}") long datacenterId,
+//                                   @Value("${shop.worker-id:1}") long workerId) {
+//        return new IdGenerator(datacenterId, workerId);
+//    }
+
 }

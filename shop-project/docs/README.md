@@ -34,7 +34,7 @@
 | 事务 | Seata（先 AT，TCC 作亮点） |
 | 消息 | RabbitMQ（延迟插件、死信队列） |
 | 缓存 | Redis、Redisson、Lua、Caffeine |
-| 持久化 | MySQL + MyBatis-Plus |
+| 持久化 | MySQL + 原生 MyBatis（分页/雪花ID/自动填充用 MyBatis-Plus） |
 | 定时 | XXL-JOB |
 | 前端 | Vue3 + Vite + TS + Pinia + Vue Router + Element Plus + nginx |
 | 文档 | Knife4j |
