@@ -1,0 +1,14 @@
+{
+  "name": "T2-spu-detail-cached-direct",
+  "baseUrl": "http://localhost:8083",
+  "warmupSec": 10,
+  "request": {
+    "method": "GET",
+    "path": "/api/product/spu/2107390427584630785"
+  },
+  "okCodes": [0],
+  "_note": "直连 shop-product（8083）。走 SpuService.detail → Caffeine(L1) + Redis(L2)。命中率由 run-read.sh 读 redis info stats 前后差值算。",
+  "runs": [
+    { "concurrency": 100, "durationSec": 30 }
+  ]
+}

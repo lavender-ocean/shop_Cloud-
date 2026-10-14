@@ -14,13 +14,27 @@
 shop-project/infra/mysql/data/
 shop-project/infra/redis/data/
 shop-project/infra/rabbitmq/data/
+# 中间件密码（真实值只在本地，仓库里放 .env.example）
+shop-project/infra/.env
+
+# 运行日志（xxl-job 等）
+logs/
+*.log
 
 # 临时文件
 temp.*
 *.pdf
-*.log
 *.tmp
 
-#前端
-front/node_modules/
-front/dist/
+# 前端（pnpm workspace：依赖装在 apps/*/node_modules，必须用 **/ 通配）
+**/node_modules/
+**/dist/
+**/.vite/
+**/*.tsbuildinfo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 压测：保留原始 .jtl / .log 结果，忽略 JMeter 生成的 HTML 报告（内含大量第三方静态资源）
+shop-project/bench/results/*-report/

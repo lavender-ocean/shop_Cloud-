@@ -1,0 +1,24 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: shop-inventory
+  profiles:
+    active: dev
+  cloud:
+    nacos:
+      server-addr: 127.0.0.1:8848
+      username: nacos
+      password: nacos
+      discovery:
+        namespace: dev
+        group: DEFAULT_GROUP
+      config:
+        namespace: dev
+        group: DEFAULT_GROUP
+        file-extension: yaml
+  config:
+    import:                                              # ← 关键：之前缺的就是这一段
+      - optional:nacos:common-dev.yaml
+      - optional:nacos:shop-inventory-dev.yaml

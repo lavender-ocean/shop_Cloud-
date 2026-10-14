@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.payment.mapper.PaymentRecordMapper">
+
+    <select id="selectByPaymentNo" resultType="com.shop.payment.entity.PaymentRecord">
+        SELECT id, payment_no, order_no, user_id, channel, amount, status, third_trade_no,
+               callback_content, pay_time, create_time, update_time, deleted
+        FROM payment_record WHERE payment_no = #{paymentNo} AND deleted = 0
+    </select>
+
+    <select id="selectPendingByOrderNo" resultType="com.shop.payment.entity.PaymentRecord">
+        SELECT id, payment_no, order_no, user_id, channel, amount, status
+        FROM payment_record
+        WHERE order_no = #{orderNo} AND status = 0 AND deleted = 0
+        ORDER BY id DESC LIMIT 1
+    </select>
+
+    <insert id="insert">
+        INSERT INTO payment_record (id, payment_no, order_no, user_id, channel, amount, status,
+                                    third_trade_no, pay_time, create_time, update_time, deleted)
+        VALUES (#{id}, #{paymentNo}, #{orderNo}, #{userId}, #{channel}, #{amount}, #{status},
+                #{thirdTradeNo}, #{payTime}, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="markSuccess">
+        UPDATE payment_record
+        SET status = 1, third_trade_no = #{thirdTradeNo}, pay_time = NOW(), update_time = NOW()
+        WHERE payment_no = #{paymentNo} AND status = 0 AND deleted = 0
+    </update>
+</mapper>

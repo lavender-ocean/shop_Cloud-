@@ -12,7 +12,9 @@ public class JwtProperties {
     /** HMAC-SHA256 密钥，长度必须 >= 32 字节 */
     private String secret = "shop-cloud-super-secret-key-please-change-in-prod-32bytes";
 
+    //规定的accessToken的存活时间
     private Duration accessTokenTtl = Duration.ofMinutes(30);
+    //规定的refreshToken的存活时间
     private Duration refreshTokenTtl = Duration.ofDays(7);
 }
 

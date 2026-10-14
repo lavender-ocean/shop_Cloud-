@@ -1,0 +1,8 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+# pnpm 10：允许这些依赖执行安装脚本（原先的 allowBuilds 是占位文本，非法配置）
+onlyBuiltDependencies:
+  - esbuild
+  - vue-demi

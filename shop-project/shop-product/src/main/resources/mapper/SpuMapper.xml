@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.product.mapper.SpuMapper">
+
+    <sql id="cols">
+        id, spu_code, name, category_id, brand_id, main_image, images, detail,
+        price_min, price_max, unit, is_cold_chain, status, deleted
+    </sql>
+
+    <select id="selectPage" resultType="com.shop.product.entity.Spu">
+        SELECT <include refid="cols"/> FROM spu
+        WHERE deleted = 0
+        <if test="q.name != null and q.name != ''">AND name LIKE CONCAT('%', #{q.name}, '%')</if>
+        <if test="q.categoryId != null">AND category_id = #{q.categoryId}</if>
+        <if test="q.status != null">AND status = #{q.status}</if>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectById" resultType="com.shop.product.entity.Spu">
+        SELECT <include refid="cols"/> FROM spu WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <insert id="insert">
+        INSERT INTO spu (id, spu_code, name, category_id, brand_id, main_image, images, detail,
+                         price_min, price_max, unit, is_cold_chain, status,
+                         create_time, update_time, create_by, update_by, deleted)
+        VALUES (#{id}, #{spuCode}, #{name}, #{categoryId}, #{brandId}, #{mainImage}, #{images}, #{detail},
+                #{priceMin}, #{priceMax}, #{unit}, #{isColdChain}, #{status},
+                NOW(), NOW(), 0, 0, 0)
+    </insert>
+
+    <update id="update">
+        UPDATE spu
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="categoryId != null">category_id = #{categoryId},</if>
+            <if test="brandId != null">brand_id = #{brandId},</if>
+            <if test="mainImage != null">main_image = #{mainImage},</if>
+            <if test="images != null">images = #{images},</if>
+            <if test="detail != null">detail = #{detail},</if>
+            <if test="priceMin != null">price_min = #{priceMin},</if>
+            <if test="priceMax != null">price_max = #{priceMax},</if>
+            <if test="unit != null">unit = #{unit},</if>
+            <if test="isColdChain != null">is_cold_chain = #{isColdChain},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="updateStatus">
+        UPDATE spu SET status = #{status}, update_time = NOW() WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE spu SET deleted = 1, update_time = NOW() WHERE id = #{id}
+    </update>
+</mapper>
+
+
+
+
+
+
+
+
+
+
+

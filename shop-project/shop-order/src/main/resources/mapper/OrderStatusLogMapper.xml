@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.order.mapper.OrderStatusLogMapper">
+
+    <insert id="insert">
+        INSERT INTO order_status_log (id, order_no, from_status, to_status, operator_type,
+                                      operator_id, remark, create_time)
+        VALUES (#{id}, #{orderNo}, #{fromStatus}, #{toStatus}, #{operatorType},
+                #{operatorId}, #{remark}, NOW())
+    </insert>
+
+    <select id="selectByOrderNo" resultType="com.shop.order.entity.OrderStatusLog">
+        SELECT id, order_no, from_status, to_status, operator_type, operator_id, remark, create_time
+        FROM order_status_log WHERE order_no = #{orderNo} ORDER BY id ASC
+    </select>
+</mapper>

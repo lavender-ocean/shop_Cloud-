@@ -1,0 +1,19 @@
+{
+  "name": "T1b-spu-page-via-gateway-RATE-LIMITED",
+  "baseUrl": "http://localhost:8080",
+  "warmupSec": 5,
+  "login": {
+    "path": "/api/auth/login",
+    "body": { "username": "admin", "password": "admin123" },
+    "tokenField": "accessToken"
+  },
+  "request": {
+    "method": "GET",
+    "path": "/api/product/spu/page?pageNum=1&pageSize=10"
+  },
+  "okCodes": [0],
+  "_note": "★ 经网关 → 命中 Nacos SENTINEL_GROUP/shop-gateway-gw-flow-rules.json 的【路由级】限流：resource=shop-product, count=3 QPS。所以 30s 只有 ~90 次成功，其余 HTTP 429。本场景用于【证明限流生效】，不用于测性能。",
+  "runs": [
+    { "concurrency": 50, "durationSec": 30 }
+  ]
+}

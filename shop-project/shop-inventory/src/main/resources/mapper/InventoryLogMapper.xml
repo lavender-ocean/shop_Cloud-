@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.inventory.mapper.InventoryLogMapper">
+
+    <select id="countByBiz" resultType="int">
+        SELECT COUNT(*) FROM inventory_log
+        WHERE order_no = #{orderNo} AND type = #{type} AND sku_id = #{skuId}
+    </select>
+
+    <insert id="insert">
+        INSERT INTO inventory_log (id, sku_id, order_no, type, quantity, biz_no, remark, create_time)
+        VALUES (#{id}, #{skuId}, #{orderNo}, #{type}, #{quantity}, #{bizNo}, #{remark}, NOW())
+    </insert>
+
+    <select id="selectPage" resultType="com.shop.inventory.entity.InventoryLog">
+        SELECT id, sku_id, order_no, type, quantity, before_stock, after_stock, biz_no, remark, create_time
+        FROM inventory_log
+        <where>
+            <if test="skuId != null">AND sku_id = #{skuId}</if>
+        </where>
+        ORDER BY id DESC
+    </select>
+</mapper>

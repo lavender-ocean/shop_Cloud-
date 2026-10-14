@@ -31,6 +31,18 @@ spring:
           uri: lb://shop-inventory
           predicates:
             - Path=/api/inventory/**,/admin/inventory/**
+        - id: shop-order
+          uri: lb://shop-order
+          predicates:
+            - Path=/api/order/**,/admin/order/**
+        - id: shop-payment
+          uri: lb://shop-payment
+          predicates:
+            - Path=/api/payment/**
+        - id: shop-cart
+          uri: lb://shop-cart
+          predicates:
+            - Path=/api/cart/**
   config:
     import:
       - optional:nacos:common-dev.yaml

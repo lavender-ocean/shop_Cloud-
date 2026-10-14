@@ -1,0 +1,11 @@
+{
+  "name": "shop-web",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev:admin": "pnpm -F admin dev",
+    "build:admin": "pnpm -F admin build",
+    "dev:mall": "pnpm -F mall dev",
+    "build:mall": "pnpm -F mall build"
+  }
+}

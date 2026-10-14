@@ -12,12 +12,14 @@ public enum ResultCode implements IErrorCode {
 
     SUCCESS(0, "成功"),
 
+
     // ===== 通用 10xxx =====
     PARAM_ERROR(10001, "参数校验失败"),
     UNAUTHORIZED(10002, "未登录或登录已过期"),
     FORBIDDEN(10003, "无权限访问"),
     NOT_FOUND(10004, "资源不存在"),
     METHOD_NOT_ALLOWED(10005, "请求方法不支持"),
+    DUPLICATE_SUBMIT(10006, "请勿重复提交"),
     SYSTEM_ERROR(10999, "系统繁忙，请稍后重试"),
 
     // ===== 网关 11xxx =====

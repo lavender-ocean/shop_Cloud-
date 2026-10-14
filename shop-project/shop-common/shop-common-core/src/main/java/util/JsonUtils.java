@@ -4,11 +4,17 @@ package util;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 public final class JsonUtils {
 
+//    private static final ObjectMapper MAPPER = new ObjectMapper()
+//            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
     private static final ObjectMapper MAPPER = new ObjectMapper()
-            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+            .findAndRegisterModules()                                   // 自动注册 JavaTimeModule
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);    // 时间输出为字符串
 
     private JsonUtils() {
     }
@@ -36,4 +42,6 @@ public final class JsonUtils {
             throw new IllegalStateException("JSON 反序列化失败", e);
         }
     }
+
+
 }

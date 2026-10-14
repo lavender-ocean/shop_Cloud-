@@ -18,12 +18,17 @@
         <module>shop-gateway</module>
         <module>shop-product</module>
         <module>shop-inventory</module>
+        <module>shop-api</module>
+        <module>shop-order</module>
+        <module>shop-payment</module>
+        <module>shop-cart</module>
         <!--后续微服务模块，后面再加：shop-gateway、shop-order等 -->
     </modules>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.parameters>true</maven.compiler.parameters>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <spring-boot.version>3.2.5</spring-boot.version>
@@ -141,6 +146,11 @@
             <dependency>
                 <groupId>com.shop</groupId>
                 <artifactId>shop-common-feign</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.shop</groupId>
+                <artifactId>shop-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

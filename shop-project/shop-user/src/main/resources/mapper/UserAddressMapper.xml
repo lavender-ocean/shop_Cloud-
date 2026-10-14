@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.user.mapper.UserAddressMapper">
+
+    <sql id="cols">
+        id, user_id, receiver_name, receiver_phone, province, city, district, detail_address,
+        tag, is_default, create_time, update_time, create_by, update_by, deleted
+    </sql>
+
+    <select id="selectByUserId" resultType="com.shop.user.entity.UserAddress">
+        SELECT <include refid="cols"/> FROM user_address
+        WHERE user_id = #{userId} AND deleted = 0
+        ORDER BY is_default DESC, id DESC
+    </select>
+
+    <select id="selectById" resultType="com.shop.user.entity.UserAddress">
+        SELECT <include refid="cols"/> FROM user_address WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <insert id="insert">
+        INSERT INTO user_address (id, user_id, receiver_name, receiver_phone, province, city, district,
+                                  detail_address, tag, is_default,
+                                  create_time, update_time, create_by, update_by, deleted)
+        VALUES (#{id}, #{userId}, #{receiverName}, #{receiverPhone}, #{province}, #{city}, #{district},
+                #{detailAddress}, #{tag}, #{isDefault},
+                NOW(), NOW(), 0, 0, 0)
+    </insert>
+
+    <update id="update">
+        UPDATE user_address
+        <set>
+            <if test="receiverName != null">receiver_name = #{receiverName},</if>
+            <if test="receiverPhone != null">receiver_phone = #{receiverPhone},</if>
+            <if test="province != null">province = #{province},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="district != null">district = #{district},</if>
+            <if test="detailAddress != null">detail_address = #{detailAddress},</if>
+            <if test="tag != null">tag = #{tag},</if>
+            <if test="isDefault != null">is_default = #{isDefault},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </update>
+
+    <update id="clearDefault">
+        UPDATE user_address SET is_default = 0, update_time = NOW()
+        WHERE user_id = #{userId} AND is_default = 1 AND deleted = 0
+    </update>
+
+    <update id="setDefault">
+        UPDATE user_address SET is_default = 1, update_time = NOW()
+        WHERE id = #{id} AND user_id = #{userId} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE user_address SET deleted = 1, update_time = NOW()
+        WHERE id = #{id} AND user_id = #{userId}
+    </update>
+</mapper>

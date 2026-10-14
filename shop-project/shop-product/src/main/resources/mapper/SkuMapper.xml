@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.product.mapper.SkuMapper">
+
+    <select id="selectBySpuId" resultType="com.shop.product.entity.Sku">
+        SELECT id, spu_id, sku_code, name, spec_json, image, price, status
+        FROM sku WHERE spu_id = #{spuId} AND deleted = 0 ORDER BY id ASC
+    </select>
+
+
+    <select id="selectById" resultType="com.shop.product.entity.Sku">
+        SELECT id, spu_id, sku_code, name, spec_json, image, price, status
+        FROM sku WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="selectInfoByIds" resultType="com.shop.api.dto.SkuInfoDTO">
+        SELECT s.id,
+        s.spu_id,
+        p.name AS spu_name,
+        s.name,
+        s.spec_json,
+        s.image,
+        s.price,
+        s.status
+        FROM sku s
+        LEFT JOIN spu p ON p.id = s.spu_id AND p.deleted = 0
+        WHERE s.deleted = 0
+        AND s.id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </select>
+
+
+    <insert id="insertBatch">
+        INSERT INTO sku (id, spu_id, sku_code, name, spec_json, image, price, status,
+        create_time, update_time, create_by, update_by, deleted)
+        VALUES
+        <foreach collection="list" item="s" separator=",">
+            (#{s.id}, #{s.spuId}, #{s.skuCode}, #{s.name}, #{s.specJson}, #{s.image},
+            #{s.price}, #{s.status}, NOW(), NOW(), 0, 0, 0)
+        </foreach>
+    </insert>
+
+    <update id="deleteBySpuId">
+        UPDATE sku SET deleted = 1, update_time = NOW() WHERE spu_id = #{spuId}
+    </update>
+
+    <update id="updateStatusBySpuId">
+        UPDATE sku SET status = #{status}, update_time = NOW()
+        WHERE spu_id = #{spuId} AND deleted = 0
+    </update>
+</mapper>

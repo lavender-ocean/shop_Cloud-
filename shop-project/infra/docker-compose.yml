@@ -7,7 +7,7 @@ services:
     container_name: shop-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请先把 infra/.env.example 复制为 infra/.env 并填入密码}
       TZ: Asia/Shanghai
     command:
       --character-set-server=utf8mb4
@@ -20,7 +20,7 @@ services:
       - ./mysql/init:/docker-entrypoint-initdb.d
     networks: [shop-net]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -29,14 +29,17 @@ services:
     image: redis:7
     container_name: shop-redis
     restart: unless-stopped
-    command: ["redis-server", "--requirepass", "redis123", "--appendonly", "yes"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?请配置 infra/.env}", "--appendonly", "yes"]
     ports:
-      - "6379:6379"
+      # 宿主端口改用 6380：本机 127.0.0.1:6379 已被一个原生 Redis 占用，
+      # 服务走 Spring Boot 默认 localhost:6379 时会连到那台（无密码、无持久化），
+      # 导致 compose 这里的密码与 AOF 全部失效。换端口后由 Nacos 显式指向 6380。
+      - "6380:6379"
     volumes:
       - ./redis/data:/data
     networks: [shop-net]
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "redis123", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -52,7 +55,7 @@ services:
       MYSQL_SERVICE_PORT: 3306
       MYSQL_SERVICE_DB_NAME: nacos_config
       MYSQL_SERVICE_USER: root
-      MYSQL_SERVICE_PASSWORD: root123
+      MYSQL_SERVICE_PASSWORD: ${MYSQL_ROOT_PASSWORD:?请配置 infra/.env}
       MYSQL_SERVICE_DB_PARAM: "characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true"
       JVM_XMS: 512m
       JVM_XMX: 512m
@@ -75,7 +78,7 @@ services:
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: shop
-      RABBITMQ_DEFAULT_PASS: shop123
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?请配置 infra/.env}
       RABBITMQ_DEFAULT_VHOST: /shop
     ports:
       - "5672:5672"
@@ -83,6 +86,7 @@ services:
     volumes:
       - ./rabbitmq/data:/var/lib/rabbitmq
       - ./rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - ./rabbitmq/rabbitmq_delayed_message_exchange-3.12.0.ez:/opt/rabbitmq/plugins/rabbitmq_delayed_message_exchange-3.12.0.ez   # ← 加这行
     networks: [shop-net]
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
@@ -104,15 +108,33 @@ services:
     restart: unless-stopped
     environment:
       PARAMS: >-
-        --spring.datasource.url=jdbc:mysql://mysql:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
+        --spring.datasource.url=jdbc:mysql://shop-mysql:3306/xxl_job?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&serverTimezone=Asia/Shanghai
         --spring.datasource.username=root
-        --spring.datasource.password=root123
+        --spring.datasource.password=${MYSQL_ROOT_PASSWORD:?请配置 infra/.env}
     ports:
-      - "8888:8080"
+      - "8888:8080"       # 宿主机 8888 → 容器 8080（xxl-job-admin 默认 8080）
     depends_on:
       mysql:
         condition: service_healthy
     networks: [shop-net]
+
+  seata:
+    image: seataio/seata-server:1.7.1
+    container_name: shop-seata
+    restart: unless-stopped
+    environment:
+      SEATA_IP: 127.0.0.1
+      SEATA_PORT: 8091
+    ports:
+      - "8091:8091"
+      - "7091:7091"
+    volumes:
+      - ./seata/application.yml:/root/seata-server/resources/application.yml
+    depends_on:
+      nacos:
+        condition: service_healthy
+    networks: [ shop-net ]
+
 
   # seata:
   #   image: seataio/seata-server:1.7.1

@@ -19,4 +19,11 @@ public final class SecurityConstants {
     public static final String JWT_CLAIM_USER_ID = "userId";
     public static final String JWT_CLAIM_USERNAME = "username";
     public static final String JWT_CLAIM_USER_TYPE = "userType";
+
+    /** 幂等 token 请求头 */
+    public static final String HEADER_IDEMPOTENT_TOKEN = "Idempotent-Token";
+
+    /** 网关透传的权限码（逗号分隔） */
+    public static final String HEADER_USER_PERMS = "X-User-Perms";
+
 }

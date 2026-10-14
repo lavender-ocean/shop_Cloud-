@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.order.mapper.OrderInfoMapper">
+
+    <insert id="insert">
+        INSERT INTO order_info (id, order_no, user_id, total_amount, discount_amount, freight_amount,
+                                pay_amount, status, pay_type, pay_time,
+                                receiver_name, receiver_phone, receiver_province, receiver_city,
+                                receiver_district, receiver_detail, remark, expire_time,
+                                cancel_type, cancel_reason, finish_time, version,
+                                create_time, update_time, deleted)
+        VALUES (#{id}, #{orderNo}, #{userId}, #{totalAmount}, #{discountAmount}, #{freightAmount},
+                #{payAmount}, #{status}, #{payType}, #{payTime},
+                #{receiverName}, #{receiverPhone}, #{receiverProvince}, #{receiverCity},
+                #{receiverDistrict}, #{receiverDetail}, #{remark}, #{expireTime},
+                #{cancelType}, #{cancelReason}, #{finishTime}, 0,
+                NOW(), NOW(), 0)
+    </insert>
+
+    <select id="selectByOrderNo" resultType="com.shop.order.entity.OrderInfo">
+        SELECT id, order_no, user_id, total_amount, discount_amount, freight_amount, pay_amount,
+               status, pay_type, pay_time,
+               receiver_name, receiver_phone, receiver_province, receiver_city,
+               receiver_district, receiver_detail, remark, expire_time,
+               cancel_type, cancel_reason, finish_time, version, create_time, update_time, deleted
+        FROM order_info WHERE order_no = #{orderNo} AND deleted = 0
+    </select>
+
+    <select id="selectPage" resultType="com.shop.order.entity.OrderInfo">
+        SELECT id, order_no, user_id, total_amount, discount_amount, freight_amount, pay_amount,
+        status, pay_type, pay_time, receiver_name, expire_time, create_time, update_time
+        FROM order_info
+        WHERE deleted = 0
+        <if test="userId != null">AND user_id = #{userId}</if>
+        <if test="status != null">AND status = #{status}</if>
+        ORDER BY id DESC
+    </select>
+
+
+
+    <update id="closeIfPending">
+        UPDATE order_info
+        SET status = 5, cancel_type = 5, cancel_reason = #{reason},
+            update_time = NOW(), version = version + 1
+        WHERE order_no = #{orderNo} AND status = 0 AND deleted = 0
+    </update>
+
+
+
+    <update id="markPaid">
+        UPDATE order_info
+        SET status = 1, pay_time = NOW(), update_time = NOW(), version = version + 1
+        WHERE order_no = #{orderNo} AND status = 0 AND deleted = 0
+    </update>
+
+
+
+<!--    <select id="selectExpired" resultType="com.shop.order.entity.OrderInfo">-->
+<!--        SELECT id, order_no, user_id, status, expire_time, create_time-->
+<!--        FROM order_info-->
+<!--        WHERE status = 0 AND expire_time IS NOT NULL AND expire_time &lt; NOW() AND deleted = 0-->
+<!--        ORDER BY id ASC-->
+<!--            LIMIT #{limit}-->
+<!--    </select>-->
+
+
+    <select id="selectExpired" resultType="com.shop.order.entity.OrderInfo">
+        SELECT id, order_no, user_id, status, expire_time, create_time
+        FROM order_info
+        WHERE status = 0 AND expire_time IS NOT NULL AND expire_time &lt; NOW() AND deleted = 0
+          AND MOD(id, #{shardTotal}) = #{shardIndex}
+        ORDER BY id ASC
+            LIMIT #{limit}
+    </select>
+
+    <!-- 用户取消：0 → 4。CAS：仅当仍为待支付才允许取消 -->
+    <update id="cancelIfPending">
+        UPDATE order_info
+        SET status = 4,
+            cancel_type = 1,
+            cancel_reason = '用户取消',
+            update_time = NOW(),
+            version = version + 1
+        WHERE order_no = #{orderNo} AND status = 0 AND deleted = 0
+    </update>
+
+    <!-- 管理员发货：1 → 2。CAS：仅当已支付才允许发货 -->
+    <update id="markShipped">
+        UPDATE order_info
+        SET status = 2,
+            update_time = NOW(),
+            version = version + 1
+        WHERE order_no = #{orderNo} AND status = 1 AND deleted = 0
+    </update>
+</mapper>

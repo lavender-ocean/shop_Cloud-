@@ -53,6 +53,20 @@ public class WebAutoConfiguration {
      * - LocalDateTime/LocalDate 统一格式
      * - 忽略 null 字段
      */
+
+    //SpringBoot 使用 Jackson 做 JSON 序列化 / 反序列化。这里统一全局规则：
+    //1. `Long.class → ToStringSerializer`
+    //> **解决雪花 ID 精度丢失问题**：后端 Long（雪花 id）返回给前端 JS，JS Number 只能安全存 53 位；超过就精度丢失。把 Long 序列化为字符串传给前端。
+    //> 注意：只处理包装类 `Long`；基础类型 `long` 不受影响。
+    //2. LocalDateTime / LocalDate 时间序列化、反序列化
+
+    //> Java8 时间类，默认 Jackson 会输出一堆数组`[2026,10,10,18,30]`，很不友好。这里指定格式 `yyyy‑MM‑dd HH:mm:ss`。
+    //> 同时配置序列化（后端输出 JSON）、反序列化（前端传 JSON 时间字符串到后端对象）双向。
+
+    //3. `serializationInclusion(JsonInclude.Include.NON_NULL)`
+    //> 对象字段值为 null 时，JSON 输出直接忽略这个字段，不输出 `"field":null`。
+
+    //4. `timeZone(Asia/Shanghai)` 设置东八区时区，防止时间偏移 8 小时 bug。
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer shopJacksonCustomizer() {
         return builder -> {

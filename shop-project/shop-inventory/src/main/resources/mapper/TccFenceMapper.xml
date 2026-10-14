@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.inventory.mapper.TccFenceMapper">
+
+    <sql id="cols">
+        id, xid, branch_id, action_name, status, business_key, items_json,
+        create_time, update_time
+    </sql>
+
+    <select id="selectByXidBranch" resultType="com.shop.inventory.tcc.TccFence">
+        SELECT <include refid="cols"/>
+        FROM tcc_fence
+        WHERE xid = #{xid} AND branch_id = #{branchId}
+    </select>
+
+    <select id="selectByXidBranchForUpdate" resultType="com.shop.inventory.tcc.TccFence">
+        SELECT <include refid="cols"/>
+        FROM tcc_fence
+        WHERE xid = #{xid} AND branch_id = #{branchId}
+        FOR UPDATE
+    </select>
+
+    <insert id="insert">
+        INSERT INTO tcc_fence (id, xid, branch_id, action_name, status, business_key,
+                               items_json, create_time, update_time)
+        VALUES (#{id}, #{xid}, #{branchId}, #{actionName}, #{status}, #{businessKey},
+                #{itemsJson}, NOW(), NOW())
+    </insert>
+
+    <update id="updateStatus">
+        UPDATE tcc_fence
+        SET status = #{status}, action_name = #{actionName}, update_time = NOW()
+        WHERE xid = #{xid} AND branch_id = #{branchId}
+        AND status IN
+        <foreach collection="expectedStatuses" item="s" open="(" separator="," close=")">#{s}</foreach>
+    </update>
+
+    <select id="selectStaleTry" resultType="com.shop.inventory.tcc.TccFence">
+        SELECT <include refid="cols"/>
+        FROM tcc_fence
+        WHERE status IN
+        <foreach collection="statuses" item="s" open="(" separator="," close=")">#{s}</foreach>
+        AND items_json IS NOT NULL
+        AND update_time &lt; DATE_SUB(NOW(), INTERVAL #{minutes} MINUTE)
+        ORDER BY update_time ASC
+        LIMIT #{limit}
+    </select>
+</mapper>

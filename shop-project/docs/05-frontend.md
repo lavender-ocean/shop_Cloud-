@@ -1,169 +1,85 @@
-# 05 · 前端方案（E）
+# 05 · 前端方案
 
-## E-1 工程形态与选型
+> 现状：**仅实现了管理端（`apps/admin`）**；用户端（`apps/mall`）尚未创建。
 
-**两个应用、一个 pnpm workspace monorepo：**
+## 1. 工程形态（实际）
 
 ```
-shop-web/
+shop-project/web/
 ├── pnpm-workspace.yaml
-├── packages/shared/          # request 封装 / 类型 / 工具 / 常量
-└── apps/
-    ├── mall/                 # 用户端（PC，Element Plus，简版；H5 后置）
-    └── admin/                # 管理端（PC，Element Plus）
+├── package.json
+├── packages/shared/            # request 封装 + 类型（双端共享）
+│   └── src/{index.ts, request.ts, types.ts}
+└── apps/admin/                 # 管理端（Vue3 + TS + Element Plus）
+    └── src/
+        ├── main.ts  App.vue  vite-env.d.ts
+        ├── api/{auth.ts, product.ts}
+        ├── stores/{user.ts, permission.ts}
+        ├── router/index.ts
+        ├── layout/index.vue      # 布局（侧边栏 + 顶栏 + router-view）
+        ├── components/MenuTree.vue   # 递归菜单
+        ├── directive/permission.ts   # v-permission
+        ├── utils/icons.ts
+        └── views/{Login, Welcome, NotFound, product/manage/index, ...}
 ```
 
-| 项 | mall | admin |
+- **技术栈**：Vue3 `<script setup>` + Vite + TypeScript + Pinia + Vue Router 4 + Element Plus。
+- **`@shared` 别名**：Vite `resolve.alias` 直接指向 `packages/shared/src`（绕开工作区依赖解析）。
+- 开发代理：`/api` 与 `/admin` → `http://localhost:8080`（网关）。
+
+## 2. request 封装（`packages/shared/src/request.ts`）
+
+- axios 实例，`baseURL = '/'`。
+- **请求拦截**：`Authorization: Bearer {token}`（token 存 localStorage）。
+- **响应拦截**：解包 `Result`（`code===0` 返回 `data`，否则 reject）。
+- **401 刷新 + 并发排队**：`isRefreshing` 标志 + `waiters` 队列；刷新接口 `/api/auth/refresh`；失败则清 token 并回调 `setUnauthorizedHandler`。
+- 应用侧注入未授权处理（`main.ts` 里 `setUnauthorizedHandler` → 登出 + 跳登录），**shared 不依赖 router**。
+
+## 3. 鉴权与动态菜单（核心）
+
+**路由分两类**：静态（`/login`、`/404`、`Layout` + `welcome`）+ **动态（来自后端 `/api/auth/userinfo` 的菜单树）**。
+
+**守卫流程**（`router/index.ts`）：
+```
+进入路由 → meta.public? → 放行
+        → 无 token → /login
+        → permissionStore.loaded? → 放行
+        → 拉 /userinfo → buildRoutes(menus) → 重新进入 (replace)
+```
+
+**`permissionStore.buildRoutes`**：
+- 用 `import.meta.glob('../views/**/*.vue')` 映射 `component` 字段（如 `product/manage/index`）到真实组件；
+- `router.addRoute('Layout', route)`；
+- **最后**加 404 兜底路由（必须在动态路由之后，否则刷新时误命中 404）。
+
+**两个踩坑点**（面试常问）：
+1. **F5 后动态路由丢失** → 守卫用 `loaded` 标志重建。
+2. **404 兜底必须最后加**。
+
+**按钮级权限**：`v-permission="'product:spu:add'"` 指令，无权限则移除元素。前端隐藏**只是体验**，真正防线在后端（网关 + 服务端 `@RequirePermission`）。
+
+## 4. Pinia Store
+
+```
+userStore       token / userId / username / userType / roles / permissions
+                setLogin / fetchUserInfo / logout(整页刷新以清动态路由)
+permissionStore loaded / menus / buildRoutes / reset
+```
+
+## 5. 已实现页面
+
+| 页面 | 路径 | 说明 |
 |---|---|---|
-| UI 库 | Element Plus | Element Plus |
-| 布局 | PC 响应式 | 经典后台（侧边栏 + 顶栏 + 标签页） |
-| 权限 | 登录态 | **RBAC 动态路由 + 按钮权限** |
+| 登录 | `/login` | 调 `/api/auth/login`，存 token |
+| 布局 | `Layout` | 侧边栏（动态菜单）+ 顶栏（用户/角色/退出） |
+| 首页 | `/welcome` | 欢迎页 |
+| 商品管理 | `/product/spu` | 类目树筛选 + SPU 分页 + 新增/编辑(含 SKU 子表) + 上下架 + 删除 |
+| 用户管理/角色管理/订单列表 | 菜单占位 | 仅占位页 |
 
-**技术栈**：Vue3 `<script setup>` + Vite + TypeScript + Pinia + Vue Router 4 + axios。
-**规范**：ESLint + Prettier + Stylelint + Husky + lint-staged + commitlint。
+> 菜单 via `sys_permission.component` → 前端组件路径。新增页面只需新建组件 + 更新 `component` 字段。
 
----
+## 6. 未完成
 
-## E-2 环境变量与代理
-
-```bash
-# apps/admin/.env.development
-VITE_API_BASE_URL=/admin
-```
-```ts
-// vite.config.ts —— 开发代理
-server: {
-  proxy: {
-    '/admin': { target: 'http://localhost:8080', changeOrigin: true },
-    '/api':   { target: 'http://localhost:8080', changeOrigin: true },
-  }
-}
-```
-> 开发用 Vite proxy，生产用 nginx，前端只认 `/api` `/admin` 前缀，**代码零改动**。
-
----
-
-## E-3 axios 封装（token 刷新 + 并发排队）
-
-```ts
-const service = axios.create({ baseURL: import.meta.env.VITE_API_BASE_URL, timeout: 10000 })
-
-service.interceptors.request.use(cfg => {
-  const token = useUserStore().accessToken
-  if (token) cfg.headers.Authorization = `Bearer ${token}`
-  return cfg
-})
-
-service.interceptors.response.use(
-  res => {
-    const { code, message, data } = res.data
-    if (code === 0) return data
-    ElMessage.error(message); return Promise.reject(new Error(message))
-  },
-  async err => {
-    if (err.response?.status === 401) return handleRefreshToken(err.config)
-    ElMessage.error('系统繁忙'); return Promise.reject(err)
-  }
-)
-```
-
-**Token 刷新 + 并发排队：**
-```
-access token 过期 → 第一个 401 触发刷新
-                 → 刷新期间其他 401 挂入等待队列（不重复刷新）
-                 → 刷新成功用新 token 重发；失败清 token 跳登录
-```
-用 `isRefreshing` 标志 + promise 队列实现。
-
-**鉴权说明**：token 存 localStorage（`pinia-plugin-persistedstate`），走 `Authorization` 头；代价是 XSS 风险 → 后端做 XSS 防护 + accessToken 短时效。
-
----
-
-## E-4 Pinia Store
-
-```
-mall:  userStore / cartStore / addressStore
-admin: userStore（token/userInfo/roles/permissions）
-       permissionStore（动态路由）
-       appStore（侧边栏/主题）
-       tagsViewStore（页签缓存）
-```
-> 原则：服务端状态不长期驻留前端，store 只放跨页面共享 + 需持久化的状态。
-
----
-
-## E-5 动态权限（admin 核心）
-
-```
-进入路由 → 有 token?
-   ├─ 无 → 登录页
-   └─ 有 → 是否已拉取用户信息?
-        ├─ 否 → /admin/auth/userinfo 拿 roles/permissions + 菜单树
-        │        → 生成动态路由 → router.addRoute()
-        │        → 存 permissionStore → next({...to, replace:true})
-        └─ 是 → 放行
-```
-
-**两个细节：**
-1. F5 后 `addRoute` 丢失 → 守卫里检查并重建。
-2. 404 兜底路由**最后** `addRoute`，否则刷新命中 404。
-
-菜单树由 `sys_permission` 驱动，前后端权限模型对齐。
-
----
-
-## E-6 按钮级权限
-
-```html
-<el-button v-permission="'order:cancel'">取消订单</el-button>
-```
-> 前端隐藏按钮只是体验，**真正鉴权在后端**（网关 + 服务层）。
-
----
-
-## E-7 nginx 反代 + 灰度入口
-
-```nginx
-server {
-  listen 80;
-  location / { root /usr/share/nginx/html/mall; try_files $uri $uri/ /index.html; }
-  location /admin-ui/ { root /usr/share/nginx/html/admin; try_files $uri $uri/ /admin-ui/index.html; }
-  location /api/   { proxy_pass http://shop-gateway:8080; }
-  location /admin/ { proxy_pass http://shop-gateway:8080; }
-  gzip on;
-}
-```
-- `try_files` 解决 history 刷新 404。
-- 生产同源，跨域消失。
-- **灰度入口**：按 cookie/header 分流到灰度网关（亮点）。
-
----
-
-## E-8 接口契约
-
-| 项 | 约定 |
-|---|---|
-| 用户端路径 | `/api/{service}/...` |
-| 管理端路径 | `/admin/{service}/...` |
-| 返回结构 | `{ code, message, data }`，**code=0 成功** |
-| 分页入参 | `{ pageNum, pageSize }` |
-| 分页出参 | `{ list, total, pageNum, pageSize }` |
-| 大整数 | 后端 Long→String，前端按 string 处理 |
-| 鉴权 | 登录返 `accessToken` + `refreshToken` |
-| 权限码 | 与 `sys_permission.perm_code` 一致 |
-
----
-
-## E-9 页面清单
-
-- **mall**：首页/类目 / 商品列表 / 商品详情 / 购物车 / 结算 / 支付 / 订单列表·详情 / 地址管理 / 登录注册 / 个人中心
-- **admin**：登录 / 看板 / 商品(SPU·SKU) / 类目·品牌 / 库存 / 订单 / 用户 / 营销 / 系统(用户·角色·权限)
-
----
-
-## E-10 验收
-
-1. admin 登录后按角色渲染动态菜单，刷新不掉路由。
-2. 越权访问前端被拦、后端也拒绝。
-3. access token 过期自动刷新重发，刷新失败跳登录。
-4. nginx 部署后三端同源可访问。
+- **用户端 `apps/mall`**（购物车、下单、订单列表）。
+- **nginx 反向代理 + 生产构建部署**（开发用 Vite proxy）。
+- 动态路由的 tagsView 缓存、按钮权限的细粒度刷新。

@@ -1,0 +1,16 @@
+{
+  "name": "T5-inventory-stock-read-multiSku",
+  "baseUrl": "http://localhost:8084",
+  "warmupSec": 10,
+  "request": {
+    "method": "GET",
+    "path": "/inner/inventory/stock/{skuId}",
+    "skuRange": { "from": 900101, "to": 900150 }
+  },
+  "okCodes": [0],
+  "_note": "直连 inventory 服务，剥掉网关与订单逻辑。★ 关键：50 个 SKU 轮询，避免同一行行锁把并发串行化（见 docs/10 §3.3）。只读、无副作用。",
+  "runs": [
+    { "concurrency": 50, "durationSec": 30 },
+    { "concurrency": 100, "durationSec": 30 }
+  ]
+}

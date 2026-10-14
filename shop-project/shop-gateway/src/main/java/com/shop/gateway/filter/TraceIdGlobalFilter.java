@@ -16,6 +16,7 @@ import java.util.UUID;
 public class TraceIdGlobalFilter implements GlobalFilter , Ordered {
 
 
+    //最先由网关来做这个traceId的签发
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         //1.从请求头拿到上游传来的traceId

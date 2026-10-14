@@ -14,6 +14,16 @@
     <packaging>pom</packaging>
     <name>shop-common</name>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>transmittable-thread-local</artifactId>
+            <version>2.14.5</version>
+        </dependency>
+
+    </dependencies>
+
+
     <modules>
         <module>shop-common-core</module>
         <module>shop-common-web</module>

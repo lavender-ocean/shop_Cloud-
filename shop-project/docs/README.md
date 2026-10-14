@@ -1,73 +1,76 @@
 # shop_Cloud · 线上超市分布式电商平台
 
-> 一句话：基于 **Spring Cloud Alibaba + Vue3** 的线上超市电商平台，支付使用 Mock 模拟，用于秋招作品集。
+> 基于 **Spring Cloud Alibaba + Vue3** 的线上超市电商平台，支付使用 Mock 模拟。用于秋招作品集。
 
 ---
 
-## 1. 目标与定位
+## 1. 定位
 
 - **领域**：线上超市（商超 / 生鲜）。
-- **目标**：先做出**可跑通、可演示**的底座（下单 → 支付 → 超时关单闭环 + 管理端），再注入高含金量亮点。
+- **目标**：先做**可跑通、可演示**的底座（下单 → 支付 → 超时关单闭环 + 管理端），再注入高含金量亮点。
 - **约束**：一个人全职开发；**仅本地 Docker**，无公网演示。
-- **面试定位**：追求"可演示 + 可防守的深水亮点"，**反对技术堆砌**。
-
----
+- **面试定位**：追求"可演示 + 可防守的深度亮点"，**反对技术堆砌**。
 
 ## 2. 设计原则
 
-1. **骨架求全，亮点求深**——底座完整，亮点少而精。
-2. **每个技术点能回答三问**：为什么用它 / 不用会怎样 / 代价是什么。
-3. **分场景选方案**——不搞"一条链路一个方案"，尤其是分布式一致性。
-4. **在正确的层级用正确的技术**——WebFlux 只在网关，业务用 MVC。
-5. **量化**——每个亮点要有数据（QPS / p99 / 命中率 / 降级前后对比）。
+1. 骨架求全，亮点求深。
+2. 每个技术点能回答：**为什么用 / 不用会怎样 / 代价是什么**。
+3. **分场景选一致性方案**（不搞"一条链路一个方案"）。
+4. 在正确的层级用正确的技术（WebFlux 只在网关，业务用 MVC）。
+5. 量化（压测数据、命中率、降级前后对比）。
 
 ---
 
-## 3. 技术栈
+## 3. 技术栈（实际使用）
 
 | 分类 | 技术 |
 |---|---|
 | 基础 | JDK17、Spring Boot 3.2、Spring Cloud 2023、Spring Cloud Alibaba 2023 |
-| 注册/配置 | Nacos |
+| 注册/配置 | Nacos（namespace `dev`，group `DEFAULT_GROUP`） |
 | 网关 | Spring Cloud Gateway（WebFlux） |
-| 调用/容错 | OpenFeign、Sentinel |
-| 事务 | Seata（先 AT，TCC 作亮点） |
-| 消息 | RabbitMQ（延迟插件、死信队列） |
-| 缓存 | Redis、Redisson、Lua、Caffeine |
-| 持久化 | MySQL + 原生 MyBatis（分页/雪花ID/自动填充用 MyBatis-Plus） |
-| 定时 | XXL-JOB |
-| 前端 | Vue3 + Vite + TS + Pinia + Vue Router + Element Plus + nginx |
+| 调用/容错 | OpenFeign（+ 透传拦截器）、Sentinel |
+| 事务 | **Seata AT**（`@GlobalTransactional`）+ **手写显式 TCC**（`tcc_fence` 状态机），用开关切换 |
+| 消息 | RabbitMQ（**延迟插件 `x-delayed-message`**、本地消息表、手动 ack + 有限重试 + 死信） |
+| 调度 | **XXL-JOB**（分片广播 + `SELECT ... FOR UPDATE SKIP LOCKED` 抢占 + 僵死回收） |
+| 持久化 | **原生 MyBatis（XML 写 SQL）** + MyBatis-Plus（分页 / 雪花 ID） |
+| 缓存 | Redis（StringRedisTemplate）、**Caffeine（L1 多级缓存）**、Lua |
+| 前端 | Vue3 + Vite + TS + Pinia + Vue Router + Element Plus（pnpm workspace 双应用：admin / mall） |
 | 文档 | Knife4j |
+
+> ⚠️ `redisson-spring-boot-starter` 依赖引入了但**代码里零引用**，列在待清理项（见 [08](08-audit-findings.md) P2-2）。
 
 ---
 
-## 4. 服务划分
+## 4. 服务与端口（实际）
 
-| 类型 | 服务 | 职责 |
-|---|---|---|
-| 平台 | gateway | 路由 / 鉴权 / 限流 / 灰度 |
-| 平台 | auth | 登录 / JWT / RBAC |
-| 业务 | user | 用户 / 地址 / 会员积分 |
-| 业务 | product | 类目 / 品牌 / SPU / SKU |
-| 业务 | inventory | 库存 / 扣减 / 锁定 |
-| 业务 | cart | 购物车（Redis） |
-| 业务 | order | 订单 / 状态机 / 超时关单 |
-| 业务 | payment | Mock 支付 / 回调 / 对账 |
-| 业务 | promotion | 优惠券 / 秒杀（底座留表） |
+| 服务 | 端口 | 状态 | 说明 |
+|---|---|---|---|
+| shop-gateway | 8080 | ✅ | 路由 / JWT 鉴权 / 黑名单 / 用户头注入 |
+| shop-auth | 8081 | ✅ | 登录 / JWT / 刷新 / 登出 / RBAC / 菜单 |
+| shop-user | 8082 | ✅ | 用户资料 / 收货地址 CRUD + 内部接口 |
+| shop-product | 8083 | ✅ | 类目 / 品牌 / SPU / SKU |
+| shop-inventory | 8084 | ✅ | 库存锁定 / 确认 / 释放 + 流水 |
+| shop-cart | 8085 | ✅ | Redis 购物车 |
+| shop-order | 8086 | ✅ | 下单（Seata）/ 超时关单 / 支付事件消费 |
+| shop-payment | 8087 | ✅ | Mock 支付 + 回调 |
 
-> 管理端**不单独拆服务**，用 `/admin/**` 路径 + RBAC 区分。
+中间件：MySQL `3307`、Redis `6379`、Nacos `8848`、RabbitMQ `5672/15672`、Sentinel `8858`、Seata `8091/7091`、XXL-JOB `8888`（**已接入，3 个任务在跑**）。
+
+> ⚠️ **RabbitMQ 的 vhost 是 `/shop`**（不是默认 `/`）；用 `rabbitmqctl list_queues` 查默认 vhost 会看到空，排查时用管理 API `/api/queues/%2Fshop`。
+> ⚠️ 用 `java -jar` 启动必须加 **`-Dfile.encoding=UTF-8`**，否则 JDK17 在中文 Windows 下按 GBK 读 Nacos 的 UTF-8 YAML 会抛 `MalformedInputException`。
 
 ---
 
 ## 5. 里程碑
 
-| 里程碑 | 内容 |
-|---|---|
-| M0 环境 + 骨架 | 中间件、父 pom、common、统一规范 |
-| M1 基础能力 | Nacos、Gateway、auth、Feign、Sentinel |
-| M2 核心闭环 | user/product/cart/inventory/order/payment |
-| M3 前端双端 | mall + admin、登录、动态权限、nginx |
-| M4 亮点 | TCC、秒杀、多级缓存、幂等组件、可观测 |
+| 里程碑 | 内容 | 状态 |
+|---|---|---|
+| M0 环境 + 骨架 | 中间件、父 pom、common、统一规范 | ✅ |
+| M1 基础能力 | Nacos、Gateway、auth(JWT+RBAC)、Feign | ✅ |
+| M2 核心闭环 | product / inventory / cart / order / payment | ✅ |
+| M3 前端 | 管理端（登录/动态菜单/商品管理）+ 商城端 mall | ✅ |
+| M4 亮点 | **AT / 显式 TCC 双模式**、多级缓存一致性、幂等组件、多实例调度、超时关单双保险 | ✅（秒杀不做，见 [07](07-interview-highlights.md) §2 ❌ 清单）|
+| M5 收尾 | 代码审计与实测验收（[08](08-audit-findings.md)）、压测（[09](09-load-test-plan.md) / [10](10-load-test-report.md)）、死代码清理 | 🟡 进行中 |
 
 ---
 
@@ -75,9 +78,18 @@
 
 | 文档 | 内容 |
 |---|---|
-| [01-skeleton.md](01-skeleton.md) | 工程骨架（A）：版本矩阵、多模块结构、common 清单、统一返回/异常/错误码 |
-| [02-database.md](02-database.md) | 数据库设计（B）：规范、7 个 schema、关键表与索引 |
-| [03-order-flow.md](03-order-flow.md) | 订单主链路（C）：一致性方案、Seata、本地消息表、延时/死信、幂等 |
-| [04-infrastructure.md](04-infrastructure.md) | 中间件编排（D）：docker-compose、Nacos 配置分层、Boot3 配置写法 |
-| [05-frontend.md](05-frontend.md) | 前端方案（E）：monorepo、request 封装、动态权限、nginx |
-| [06-roadmap.md](06-roadmap.md) | 开工计划（F）：逐步指引、里程碑、验收 |
+| [01-skeleton.md](01-skeleton.md) | 工程骨架：版本、模块、common、统一返回/异常 |
+| [02-database.md](02-database.md) | 数据库：各 schema / 表 / 索引 / 状态机 |
+| [03-order-flow.md](03-order-flow.md) | 订单主链路：Seata / 本地消息表 / 延时关单 / 支付 |
+| [04-infrastructure.md](04-infrastructure.md) | 中间件编排：compose / Nacos 配置 / 启动顺序 |
+| [05-frontend.md](05-frontend.md) | 前端：monorepo / request / 动态菜单 |
+| [06-roadmap.md](06-roadmap.md) | 已完成步骤与后续计划 |
+| [07-interview-highlights.md](07-interview-highlights.md) | **面试讲稿 + 亮点清单 + 简历 + 高频追问**（亮点标注了 ✅已验证 / ⚠️有代码未实验 / ❌未实现）|
+| [08-audit-findings.md](08-audit-findings.md) | **审计与实测验收台账**：已修/待修问题清单、全接口实测结果、数据一致性自检 SQL、排查方法 |
+| [09-load-test-plan.md](09-load-test-plan.md) | **压测计划**（待执行）：环境/工具/指标定义/6 个场景/数据准备/前置检查/防自欺欺人 8 条 |
+| [10-load-test-report.md](10-load-test-report.md) | **压测报告**（已填）：环境快照、吞吐延迟、并发正确性、多实例分片、资源与瓶颈、一致性复核 |
+| [微服务简历.md](微服务简历.md) | 只讲微服务项目的简历正文（含实测压测数据）|
+| [最终简历01.md](最终简历01.md) | 最终投递版简历 v1：项目按「亮点句 + 数据」写，含性能数据表 |
+| [最终简历02.md](最终简历02.md) | **⭐ 最终投递版简历 v2（推荐）**：项目统一按「项目简介 / 技术栈 / 个人职责 / 技术亮点」四段式，压测数据折进亮点 |
+| [简历.md](简历.md) | 单体项目（外卖秒杀）简历素材 + 写作说明 |
+| [压测报告.md](压测报告.md) | 单体项目压测报告（缓存/秒杀/限流/下单 + 瓶颈定位）|

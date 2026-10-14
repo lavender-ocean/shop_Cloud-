@@ -22,6 +22,7 @@ public enum OrderStatus {
         if (code == null) {
             return null;
         }
+        // `values()` 是编译器自动生成方法，返回全部枚举数组。
         for (OrderStatus s : values()) {
             if (s.code == code) {
                 return s;

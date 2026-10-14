@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.order.mapper.LocalMessageMapper">
+
+    <insert id="insert">
+        INSERT INTO local_message (id, msg_id, biz_type, biz_no, payload, status,
+                                   retry_count, next_retry_time, create_time)
+        VALUES (#{id}, #{msgId}, #{bizType}, #{bizNo}, #{payload}, #{status},
+                #{retryCount}, #{nextRetryTime}, NOW())
+    </insert>
+
+    <!--
+      核心：SELECT ... FOR UPDATE SKIP LOCKED
+      - 对命中的行加行级排他锁
+      - SKIP LOCKED：跳过已被其他实例锁定的行 → 多实例并行且不重复
+      - 必须运行在事务中（见 LocalMessageClaimer）
+    -->
+    <select id="selectClaimable" resultType="com.shop.order.entity.LocalMessage">
+        SELECT id, msg_id, biz_type, biz_no, payload, status,
+               retry_count, next_retry_time, claim_time, create_time
+        FROM local_message
+        WHERE status IN (0, 3)
+          AND (next_retry_time IS NULL OR next_retry_time &lt;= NOW())
+          AND MOD(id, #{shardTotal}) = #{shardIndex}
+        ORDER BY id ASC
+            LIMIT #{limit}
+            FOR UPDATE SKIP LOCKED
+    </select>
+
+    <update id="markClaimed">
+        UPDATE local_message SET status = 2, claim_time = NOW()
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">#{id}</foreach>
+    </update>
+
+    <update id="markSent">
+        UPDATE local_message SET status = 1 WHERE id = #{id}
+    </update>
+
+    <update id="markRetry">
+        UPDATE local_message
+        SET status = 3,
+            retry_count = #{retryCount},
+            next_retry_time = DATE_ADD(NOW(), INTERVAL 5 SECOND)
+        WHERE id = #{id}
+    </update>
+
+    <update id="releaseStaleClaims">
+        UPDATE local_message
+        SET status = 3, next_retry_time = NOW()
+        WHERE status = 2 AND claim_time &lt; DATE_SUB(NOW(), INTERVAL #{timeoutSeconds} SECOND)
+    </update>
+</mapper>

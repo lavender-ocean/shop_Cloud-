@@ -1,0 +1,15 @@
+{
+  "name": "T1-spu-page-direct",
+  "baseUrl": "http://localhost:8083",
+  "warmupSec": 10,
+  "request": {
+    "method": "GET",
+    "path": "/api/product/spu/page?pageNum=1&pageSize=10"
+  },
+  "okCodes": [0],
+  "_note": "★ 直连 shop-product（8083），绕过网关路由级限流（shop-product = 3 QPS）。测的是服务自身性能。",
+  "runs": [
+    { "concurrency": 50, "durationSec": 30 },
+    { "concurrency": 100, "durationSec": 30 }
+  ]
+}

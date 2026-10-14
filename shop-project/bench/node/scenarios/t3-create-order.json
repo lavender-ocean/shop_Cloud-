@@ -1,0 +1,33 @@
+{
+  "name": "T3-create-order",
+  "baseUrl": "http://localhost:8080",
+  "warmupSec": 5,
+  "login": {
+    "path": "/api/auth/login",
+    "body": { "username": "admin", "password": "admin123" },
+    "tokenField": "accessToken"
+  },
+  "preRequest": {
+    "method": "GET",
+    "path": "/api/order/token",
+    "jsonPath": "data",
+    "headerName": "Idempotent-Token",
+    "_note": "下单必须带一次性幂等 token（网关预检 + 服务端 @Idempotent 原子消费），所以每个订单前先取一个。取 token 的耗时不计入下单延迟。"
+  },
+  "request": {
+    "method": "POST",
+    "path": "/api/order",
+    "bodyTemplate": {
+      "addressId": "2109660387913506818",
+      "items": [{ "skuId": "2107390427584630786", "quantity": 1 }],
+      "remark": "LOADTEST"
+    }
+  },
+  "okCodes": [0],
+  "bizRejectCodes": [15001, 10006],
+  "_note": "★ 大 ID 必须写成【字符串】：雪花 ID 超过 2^53，写成 JSON 数字会被 Node 的 JSON.parse 精度截断（实测 2109660387913506818 变成 …800 → 13002 地址不存在）。Jackson 能把 \"123\" 转成 Long，所以字符串是安全的。每个订单都会真建库，remark=LOADTEST 用于事后清理；压测前需先给该 SKU 加大量库存。",
+  "runs": [
+    { "concurrency": 20, "durationSec": 20 },
+    { "concurrency": 50, "durationSec": 20 }
+  ]
+}

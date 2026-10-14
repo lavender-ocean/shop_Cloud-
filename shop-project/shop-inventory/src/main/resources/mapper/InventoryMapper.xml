@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.inventory.mapper.InventoryMapper">
+
+    <select id="selectBySkuId" resultType="com.shop.inventory.entity.Inventory">
+        SELECT id, sku_id, total_stock, available_stock, locked_stock, warn_stock, version
+        FROM inventory WHERE sku_id = #{skuId} AND deleted = 0
+    </select>
+
+    <select id="selectPage" resultType="com.shop.inventory.entity.Inventory">
+        SELECT id, sku_id, total_stock, available_stock, locked_stock, warn_stock, version,
+        create_time, update_time
+        FROM inventory
+        WHERE deleted = 0
+        <if test="skuId != null">AND sku_id = #{skuId}</if>
+        ORDER BY id DESC
+    </select>
+
+    <insert id="insert">
+        INSERT INTO inventory (id, sku_id, total_stock, available_stock, locked_stock, warn_stock,
+                               version, create_time, update_time, deleted)
+        VALUES (#{id}, #{skuId}, #{totalStock}, #{availableStock}, #{lockedStock}, #{warnStock},
+                0, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="increase">
+        UPDATE inventory
+        SET total_stock = total_stock + #{qty}, available_stock = available_stock + #{qty},
+            version = version + 1, update_time = NOW()
+        WHERE sku_id = #{skuId} AND deleted = 0
+    </update>
+
+    <!-- 下单锁定：可用 → 锁定；条件保证不超卖 -->
+    <update id="lock">
+        UPDATE inventory
+        SET available_stock = available_stock - #{qty}, locked_stock = locked_stock + #{qty},
+            version = version + 1, update_time = NOW()
+        WHERE sku_id = #{skuId} AND deleted = 0 AND available_stock >= #{qty}
+    </update>
+
+    <!-- 支付确认：锁定 → 真正出库 -->
+    <update id="confirm">
+        UPDATE inventory
+        SET locked_stock = locked_stock - #{qty}, total_stock = total_stock - #{qty},
+            version = version + 1, update_time = NOW()
+        WHERE sku_id = #{skuId} AND deleted = 0 AND locked_stock >= #{qty}
+    </update>
+
+    <!-- 释放：锁定 → 可用（取消/超时） -->
+    <update id="release">
+        UPDATE inventory
+        SET locked_stock = locked_stock - #{qty}, available_stock = available_stock + #{qty},
+            version = version + 1, update_time = NOW()
+        WHERE sku_id = #{skuId} AND deleted = 0 AND locked_stock >= #{qty}
+    </update>
+</mapper>

@@ -8,5 +8,7 @@ import java.util.List;
 
 @Mapper
 public interface SysPermissionMapper {
+
+    //通过userId来查找这个人所具有的所有权限
     List<SysPermission> selectByUserId(@Param("userId") Long userId);
 }

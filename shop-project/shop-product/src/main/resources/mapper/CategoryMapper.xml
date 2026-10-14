@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.shop.product.mapper.CategoryMapper">
+
+    <sql id="cols">
+        id, parent_id, name, level, sort, icon, status,
+        create_time, update_time, create_by, update_by, deleted
+    </sql>
+
+
+
+    <select id="selectAll" resultType="com.shop.product.entity.Category">
+        SELECT <include refid="cols"/> FROM category
+        WHERE deleted = 0 AND status = 1
+        ORDER BY sort ASC, id ASC
+    </select>
+
+    <select id="selectById" resultType="com.shop.product.entity.Category">
+        SELECT <include refid="cols"/> FROM category WHERE id = #{id} AND deleted = 0
+    </select>
+
+    <select id="countByParentId" resultType="int">
+        SELECT COUNT(*) FROM category WHERE parent_id = #{parentId} AND deleted = 0
+    </select>
+
+    <select id="selectPage" resultType="com.shop.product.entity.Category">
+        SELECT <include refid="cols"/> FROM category
+        WHERE deleted = 0
+        <if test="name != null and name != ''">
+            AND name LIKE CONCAT('%', #{name}, '%')
+        </if>
+        ORDER BY sort ASC, id ASC
+    </select>
+
+
+
+
+    <insert id="insert">
+        INSERT INTO category (id, parent_id, name, level, sort, icon, status,
+                              create_time, update_time, create_by, update_by, deleted)
+        VALUES (#{id}, #{parentId}, #{name}, #{level}, #{sort}, #{icon}, #{status},
+                NOW(), NOW(), 0, 0, 0)
+    </insert>
+
+    <update id="update">
+        UPDATE category
+        <set>
+            <if test="name != null">name = #{name},</if>
+            <if test="sort != null">sort = #{sort},</if>
+            <if test="icon != null">icon = #{icon},</if>
+            <if test="status != null">status = #{status},</if>
+            update_time = NOW()
+        </set>
+        WHERE id = #{id} AND deleted = 0
+    </update>
+
+    <update id="deleteById">
+        UPDATE category SET deleted = 1, update_time = NOW() WHERE id = #{id}
+    </update>
+</mapper>
+
+
+
+
+
+
+
+
+

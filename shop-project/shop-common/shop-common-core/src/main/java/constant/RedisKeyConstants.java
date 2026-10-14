@@ -25,4 +25,7 @@ public final class RedisKeyConstants {
 
     // auth:perms:{userId}    权限缓存 key
     public static final String USER_PERMISSIONS = "auth:perms:";
+
+    // MQ 消费去重
+    public static final String IDEMPOTENT_CONSUME = "idempotent:consume:";
 }
