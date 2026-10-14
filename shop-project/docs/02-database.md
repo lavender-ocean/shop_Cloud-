@@ -70,6 +70,7 @@ inventory_log  id, sku_id, order_no, type(1入库 2锁定 3扣减 4释放), quan
                before_stock, after_stock, biz_no, remark, create_time
                UK(order_no, type, sku_id)   ← 幂等关键
                idx(sku_id)
+               ⚠️ before_stock / after_stock 两列存在但当前代码未写入，查询恒为 NULL（要么补写，要么删列）
 tcc_fence      id, xid, branch_id, action_name(try/confirm/cancel),
                status(0 TRYING / 1 COMMITTED / 2 ROLLBACKED / 3 CONFIRMED),
                business_key(=orderNo), items_json(TEXT, Try 的 items 快照)
@@ -108,9 +109,12 @@ order_item       id, order_id, order_no, spu_id, sku_id,
                  price, quantity, total_amount, create_time          idx(order_id)
 order_status_log id, order_no, from_status, to_status, operator_type(1用户 2系统 3管理员),
                  operator_id, remark, create_time                    idx(order_no)
-local_message    id, msg_id(UK), biz_type, biz_no, payload, status(0待投递 1已投递 2失败),
-                 retry_count, next_retry_time, create_time           idx(status, next_retry_time)
+local_message    id, msg_id(UK), biz_type, biz_no, payload,
+                 status(0待投递 1投递成功 2投递中 3投递失败),
+                 retry_count, next_retry_time, claim_time, create_time   idx(status, next_retry_time)
 ```
+
+> `local_message.claim_time` 是「投递中」超时回收的判据：`status=2 AND claim_time < NOW()-60s` → 置回待重试（`LocalMessageMapper.xml` 的 `releaseStaleClaims`）。
 
 **订单状态机**：
 

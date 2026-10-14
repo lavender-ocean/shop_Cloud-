@@ -228,4 +228,4 @@ Queues
 | 超时未支付 | 自动关单（status=5）+ 库存释放 | ✅ |
 | 支付成功 | 订单 0→1，库存 `locked→0 / total↓` | ✅ |
 | 重复回调 | 幂等，无副作用 | ✅ |
-| 显式 TCC 下单 | Try 预占 + 落库；Cancel 补偿；Confirm 延后到支付 | ⬜ 待实测 |
+| 显式 TCC 下单 | Try 预占 + 落库；Cancel 补偿；Confirm 延后到支付 | ✅ 已实测 |
